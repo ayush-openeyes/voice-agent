@@ -58,7 +58,7 @@ export async function streamGeminiResponse(
       contents,
       config: {
         systemInstruction: SYSTEM_PROMPT,
-        tools: GEMINI_TOOLS,
+        tools: GEMINI_TOOLS as any,
         temperature: 0.7,
         maxOutputTokens: 1024,
       },
@@ -124,7 +124,7 @@ export async function streamGeminiResponse(
         ...contents,
         { role: 'model', parts },
         { role: 'user', parts: functionResponseParts },
-      ];
+      ] as any;
 
       const followUpResponse = await ai.models.generateContent({
         model,
