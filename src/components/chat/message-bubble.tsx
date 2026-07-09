@@ -17,6 +17,8 @@ interface MessageBubbleProps {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isStreaming = message.isStreaming;
+  const isGenerating = !isUser && (isStreaming || message.avatarStatus === 'generating' || !message.avatarStatus);
+  const showText = isUser || message.avatarStatus === 'ready' || message.avatarStatus === 'error';
   const [showVideo, setShowVideo] = useState(false);
 
   return (
@@ -42,8 +44,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
         {/* Content */}
         <div className="message-text">
-          {message.content}
-          {isStreaming && (
+          {showText ? (
+            message.content
+          ) : (
+            <span className="text-muted-foreground italic">
+              {message.avatarStatus === 'generating' ? 'Generating video response...' : 'Thinking...'}
+            </span>
+          )}
+          {isStreaming && !isGenerating && (
             <motion.span
               className="typing-cursor"
               animate={{ opacity: [1, 0] }}
@@ -66,12 +74,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         {/* Avatar video badge / thumbnail */}
         {!isUser && message.avatarStatus && message.avatarStatus !== 'idle' && (
           <div className="message-avatar-section">
-            {message.avatarStatus === 'generating' && (
-              <div className="message-avatar-badge generating">
-                <Loader2 size={12} className="spin" />
-                <span>Generating avatar video...</span>
-              </div>
-            )}
             {message.avatarStatus === 'ready' && message.avatarVideoUrl && (
               <>
                 <button

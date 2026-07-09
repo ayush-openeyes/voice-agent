@@ -102,11 +102,13 @@ export default function Home() {
         if (pollCount > maxPolls) {
           stopAvatarPolling();
           setAvatarStatus('error');
-          setMessages((prev) =>
-            prev.map((m) =>
+          setMessages((prev) => {
+            const fullResp = prev.find((m) => m.id === msgId)?.content;
+            if (fullResp) setTimeout(() => speechSynthesis.speak(fullResp), 100);
+            return prev.map((m) =>
               m.id === msgId ? { ...m, avatarStatus: 'error' } : m,
-            ),
-          );
+            );
+          });
           return;
         }
 
@@ -129,11 +131,13 @@ export default function Home() {
           } else if (data.status === 'error') {
             stopAvatarPolling();
             setAvatarStatus('error');
-            setMessages((prev) =>
-              prev.map((m) =>
+            setMessages((prev) => {
+              const fullResp = prev.find((m) => m.id === msgId)?.content;
+              if (fullResp) setTimeout(() => speechSynthesis.speak(fullResp), 100);
+              return prev.map((m) =>
                 m.id === msgId ? { ...m, avatarStatus: 'error' } : m,
-              ),
-            );
+              );
+            });
           }
           // else: still processing, keep polling
         } catch (error) {
@@ -269,13 +273,9 @@ export default function Home() {
                         : m,
                     ),
                   );
-
-                  // Speak the response
+                  // Do NOT speak here. Wait for D-ID video or error.
                   if (data.fullResponse) {
-                    pipeline.transitionTo(AppState.AudioGeneration, 'Generating Audio');
-                    setTimeout(() => {
-                      speechSynthesis.speak(data.fullResponse);
-                    }, 300);
+                    pipeline.transitionTo(AppState.AudioGeneration, 'Waiting for Video');
                   }
                   break;
                 }

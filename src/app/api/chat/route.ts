@@ -5,7 +5,7 @@
 import { NextRequest } from 'next/server';
 import { runSafetyPipeline, BLOCKED_MESSAGE } from '@/lib/safety/pipeline';
 import { validateQuery } from '@/lib/validation/query-validator';
-import { streamGeminiResponse } from '@/lib/gemini/client';
+import { streamGroqResponse } from '@/lib/groq/client';
 import { validateResponse, responseValidationToLayerResult } from '@/lib/safety/response-validator';
 import { ChatRequest, SSEEventType } from '@/types';
 import { createTalkVideo, waitForVideoCompletion } from '@/lib/did/did-client';
@@ -15,10 +15,10 @@ function createSSEMessage(type: SSEEventType, data: unknown): string {
 }
 
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return new Response(
-      JSON.stringify({ error: 'GEMINI_API_KEY or GOOGLE_API_KEY is not configured' }),
+      JSON.stringify({ error: 'GROQ_API_KEY is not configured' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           send('state_change', { state: 'blocked', label: 'Blocked' });
           send('content', { chunk: BLOCKED_MESSAGE, accumulated: BLOCKED_MESSAGE });
           send('metadata', {
-            model: 'gemini-2.5-flash',
+            model: 'llama-3.3-70b-versatile',
             latencyMs: Date.now() - pipelineStartTime,
             toolsUsed: [],
             safety: {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
           });
           send('complete', {
             fullResponse: BLOCKED_MESSAGE,
-            metadata: { model: 'gemini-2.5-flash', latencyMs: Date.now() - pipelineStartTime },
+            metadata: { model: 'llama-3.3-70b-versatile', latencyMs: Date.now() - pipelineStartTime },
           });
           controller.close();
           return;
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
           send('complete', {
             fullResponse: question,
             metadata: {
-              model: 'gemini-2.5-flash',
+              model: 'llama-3.3-70b-versatile',
               latencyMs: Date.now() - pipelineStartTime,
               toolsUsed: [],
               safety: {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
           send('complete', {
             fullResponse: BLOCKED_MESSAGE,
             metadata: {
-              model: 'gemini-2.5-flash',
+              model: 'llama-3.3-70b-versatile',
               latencyMs: Date.now() - pipelineStartTime,
               toolsUsed: [],
               safety: { passed: false, layersPassed: 4, totalLayers: 5, reason: queryValidation.reason },
@@ -123,12 +123,12 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        // ============ Step 3: Gemini Generation ============
+        // ============ Step 3: LLM Generation ============
         send('state_change', { state: 'reasoning', label: 'Thinking' });
 
         const toolResults: Array<{ toolName: string; result: unknown }> = [];
 
-        const geminiResult = await streamGeminiResponse(
+        const aiResult = await streamGroqResponse(
           message,
           conversationHistory || [],
           apiKey,
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
 
         const responseValidation = await validateResponse(
           message,
-          geminiResult.fullResponse,
+          aiResult.fullResponse,
           toolResults.length > 0 ? toolResults : undefined,
           apiKey,
         );
@@ -163,9 +163,9 @@ export async function POST(request: NextRequest) {
           send('complete', {
             fullResponse: rejectionMsg,
             metadata: {
-              model: geminiResult.model,
+              model: aiResult.model,
               latencyMs: Date.now() - pipelineStartTime,
-              toolsUsed: geminiResult.toolsUsed,
+              toolsUsed: aiResult.toolsUsed,
               safety: { passed: false, layersPassed: 4, totalLayers: 5, reason: 'Response validation failed' },
             },
             responseValidation,
@@ -185,9 +185,9 @@ export async function POST(request: NextRequest) {
         const allLayers = [...safetyResult.layers, responseLayerResult];
 
         send('metadata', {
-          model: geminiResult.model,
+          model: aiResult.model,
           latencyMs: Date.now() - pipelineStartTime,
-          toolsUsed: geminiResult.toolsUsed,
+          toolsUsed: aiResult.toolsUsed,
           safety: {
             passed: true,
             layersPassed: allLayers.filter((l) => l.passed).length,
@@ -196,11 +196,11 @@ export async function POST(request: NextRequest) {
         });
 
         send('complete', {
-          fullResponse: geminiResult.fullResponse,
+          fullResponse: aiResult.fullResponse,
           metadata: {
-            model: geminiResult.model,
+            model: aiResult.model,
             latencyMs: Date.now() - pipelineStartTime,
-            toolsUsed: geminiResult.toolsUsed,
+            toolsUsed: aiResult.toolsUsed,
             safety: {
               passed: true,
               layersPassed: allLayers.filter((l) => l.passed).length,
@@ -212,11 +212,11 @@ export async function POST(request: NextRequest) {
 
         // ============ Step 6: D-ID Avatar Generation (async) ============
         const didApiKey = process.env.DID_API_KEY;
-        if (didApiKey && geminiResult.fullResponse) {
+        if (didApiKey && aiResult.fullResponse) {
           try {
             send('state_change', { state: 'avatar_generation', label: 'Generating Avatar' });
 
-            const avatarResult = await createTalkVideo(geminiResult.fullResponse, didApiKey);
+            const avatarResult = await createTalkVideo(aiResult.fullResponse, didApiKey);
 
             if (avatarResult.success && avatarResult.talkId) {
               send('avatar_started', { talkId: avatarResult.talkId });
@@ -237,6 +237,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (error) {
+        console.error('[API/Chat] Pipeline error:', error);
         const msg = error instanceof Error ? error.message : 'An unexpected error occurred';
         send('state_change', { state: 'error', label: 'Error' });
         send('error', { message: msg });
