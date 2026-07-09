@@ -61,10 +61,10 @@ export function PipelineBar({ currentState, latencyMs, model }: PipelineBarProps
             status === 'active'
               ? getStateConfig(currentState).color
               : status === 'complete'
-              ? '#22c55e'
+              ? '#38E54D' // Bright green
               : status === 'error'
-              ? '#ef4444'
-              : '#4b5563';
+              ? '#FF6B6B' // Pinkish red
+              : '#A0AEC0'; // Light gray
 
           return (
             <div key={stage.key} className="pipeline-stage-wrapper">
@@ -72,26 +72,32 @@ export function PipelineBar({ currentState, latencyMs, model }: PipelineBarProps
                 <div
                   className="pipeline-connector"
                   style={{
-                    background: status === 'complete' ? '#22c55e' : status === 'error' ? '#ef4444' : '#374151',
+                    background: status === 'complete' ? '#38E54D' : status === 'error' ? '#FF6B6B' : '#A0AEC0',
+                    height: '4px',
                   }}
                 />
               )}
               <motion.div
                 className={`pipeline-stage ${status}`}
-                style={{ borderColor: color }}
+                style={{ 
+                  borderColor: '#2D3748', 
+                  backgroundColor: status === 'pending' ? 'white' : color,
+                  borderWidth: '2px',
+                  boxShadow: status === 'active' ? '2px 2px 0px #2D3748' : 'none'
+                }}
                 animate={
                   status === 'active'
-                    ? { scale: [1, 1.15, 1], boxShadow: `0 0 12px ${color}40` }
-                    : { scale: 1, boxShadow: 'none' }
+                    ? { scale: [1, 1.15, 1], y: [0, -2, 0] }
+                    : { scale: 1, y: 0 }
                 }
                 transition={
                   status === 'active'
-                    ? { duration: 1.2, repeat: Infinity }
+                    ? { duration: 0.6, repeat: Infinity }
                     : { duration: 0.2 }
                 }
                 title={stage.label}
               >
-                <IconComp size={12} style={{ color }} />
+                <IconComp size={14} style={{ color: status === 'pending' ? '#A0AEC0' : '#FFFFFF' }} />
               </motion.div>
             </div>
           );

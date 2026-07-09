@@ -2,7 +2,7 @@
 // Layer 5: Response Validation
 // ============================================================
 
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 import { ResponseValidationResult, SafetyLayerResult } from '@/types';
 
 const RESPONSE_VALIDATION_PROMPT = `You are a response validation system. Analyze the AI assistant's response for quality and safety issues.
@@ -31,22 +31,24 @@ export async function validateResponse(
   apiKey: string,
 ): Promise<ResponseValidationResult> {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const groq = new Groq({ apiKey });
 
     const toolContext = toolResults && toolResults.length > 0
       ? `\nTool Results Used:\n${JSON.stringify(toolResults, null, 2)}`
       : '\nNo tools were used.';
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `${RESPONSE_VALIDATION_PROMPT}\n\nUser Query: "${userQuery}"\n\nAI Response: "${aiResponse}"${toolContext}`,
-      config: {
-        temperature: 0.1,
-        maxOutputTokens: 300,
-      },
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: RESPONSE_VALIDATION_PROMPT },
+        { role: 'user', content: `User Query: "${userQuery}"\n\nAI Response: "${aiResponse}"${toolContext}` }
+      ],
+      temperature: 0.1,
+      max_completion_tokens: 300,
+      response_format: { type: 'json_object' }
     });
 
-    const text = response?.text?.trim() || '';
+    const text = response.choices[0]?.message?.content?.trim() || '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {

@@ -2,7 +2,7 @@
 // Layer 4: Gemini Safety Validation
 // ============================================================
 
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 import { SafetyLayerResult } from '@/types';
 
 const SAFETY_VALIDATION_PROMPT = `You are a safety classification system. Analyze the following user query and determine if it is safe to process.
@@ -27,18 +27,20 @@ export async function validateWithGemini(
   apiKey: string,
 ): Promise<SafetyLayerResult> {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const groq = new Groq({ apiKey });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `${SAFETY_VALIDATION_PROMPT}\n\nUser Query: "${input}"`,
-      config: {
-        temperature: 0.1,
-        maxOutputTokens: 200,
-      },
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: SAFETY_VALIDATION_PROMPT },
+        { role: 'user', content: `User Query: "${input}"` }
+      ],
+      temperature: 0.1,
+      max_completion_tokens: 200,
+      response_format: { type: 'json_object' }
     });
 
-    const text = response?.text?.trim() || '';
+    const text = response.choices[0]?.message?.content?.trim() || '';
 
     // Parse the JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/);

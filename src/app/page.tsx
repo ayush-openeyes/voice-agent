@@ -458,52 +458,64 @@ export default function Home() {
         </div>
       )}
 
-      {/* Pipeline Progress Bar */}
-      <PipelineBar
-        currentState={pipeline.currentState}
-        latencyMs={lastMetadata.latencyMs}
-        model={lastMetadata.model}
-      />
-
-      {/* Avatar Section (50-55% of viewport) */}
-      <div className="avatar-section">
-        <AvatarOrb
-          state={pipeline.currentState}
-          volume={audioAnalyzer.volume}
-          frequencyData={audioAnalyzer.frequencyData}
-          isSpeaking={speechSynthesis.isSpeaking}
-          avatarVideoUrl={avatarVideoUrl}
-          avatarStatus={avatarStatus}
-          onVideoEnd={handleVideoEnd}
-        />
+      {/* LEFT COLUMN: Transcript */}
+      <div className="left-sidebar">
+        <h2 className="sidebar-title">💬 Chat Transcript</h2>
+        <div className="transcript-section">
+          <TranscriptPanel
+            messages={messages}
+            interimTranscript={speechRecognition.interimTranscript}
+          />
+        </div>
       </div>
 
-      {/* Voice Button */}
-      <div className="voice-button-section">
-        <VoiceButton
-          isListening={speechRecognition.isListening}
-          isProcessing={isProcessing}
-          isSupported={speechRecognition.isSupported}
-          state={pipeline.currentState}
-          onClick={handleToggleListening}
+      {/* CENTER COLUMN: Mascot & Voice */}
+      <div className="center-stage">
+        {/* Pipeline Progress Bar */}
+        <PipelineBar
+          currentState={pipeline.currentState}
+          latencyMs={lastMetadata.latencyMs}
+          model={lastMetadata.model}
         />
+
+        {/* Avatar Section */}
+        <div className="avatar-section">
+          <AvatarOrb
+            state={pipeline.currentState}
+            volume={audioAnalyzer.volume}
+            frequencyData={audioAnalyzer.frequencyData}
+            isSpeaking={speechSynthesis.isSpeaking}
+            avatarVideoUrl={avatarVideoUrl}
+            avatarStatus={avatarStatus}
+            onVideoEnd={handleVideoEnd}
+          />
+        </div>
+
+        {/* Voice Button */}
+        <div className="voice-button-section">
+          <VoiceButton
+            isListening={speechRecognition.isListening}
+            isProcessing={isProcessing}
+            isSupported={speechRecognition.isSupported}
+            state={pipeline.currentState}
+            onClick={handleToggleListening}
+          />
+        </div>
       </div>
 
-      {/* Transcript Panel */}
-      <div className="transcript-section">
-        <TranscriptPanel
-          messages={messages}
-          interimTranscript={speechRecognition.interimTranscript}
+      {/* RIGHT COLUMN: Telemetry & Logs */}
+      <div className="right-sidebar">
+        <h2 className="sidebar-title">📊 Live Telemetry</h2>
+        
+        <MetadataFooter
+          model={lastMetadata.model}
+          latencyMs={lastMetadata.latencyMs}
+          toolsUsed={lastMetadata.toolsUsed}
+          safety={lastMetadata.safety}
         />
+        
+        {/* More detailed logs can go here later */}
       </div>
-
-      {/* Metadata Footer */}
-      <MetadataFooter
-        model={lastMetadata.model}
-        latencyMs={lastMetadata.latencyMs}
-        toolsUsed={lastMetadata.toolsUsed}
-        safety={lastMetadata.safety}
-      />
     </div>
   );
 }

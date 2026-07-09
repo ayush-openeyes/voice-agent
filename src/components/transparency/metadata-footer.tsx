@@ -16,61 +16,72 @@ interface MetadataFooterProps {
 }
 
 export function MetadataFooter({ model, latencyMs, toolsUsed, safety }: MetadataFooterProps) {
-  const hasData = model || latencyMs !== undefined || (toolsUsed && toolsUsed.length > 0) || safety;
-
-  if (!hasData) {
-    return (
-      <div className="metadata-footer">
-        <div className="metadata-item">
-          <Cpu size={12} />
-          <span>gemini-2.5-flash</span>
-        </div>
-        <div className="metadata-item">
-          <Shield size={12} className="text-emerald-400" />
-          <span>5-Layer Safety Active</span>
-        </div>
-      </div>
-    );
-  }
+  const currentModel = model || 'llama-3.3-70b-versatile';
 
   return (
     <motion.div
-      className="metadata-footer"
+      className="flex flex-col p-4 gap-4 overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {model && (
-        <div className="metadata-item">
-          <Cpu size={12} />
-          <span>{model}</span>
+      {/* Model Info Block */}
+      <div className="bg-white border-2 border-[#2D3748] rounded-md shadow-[4px_4px_0_0_#2D3748] p-3 flex flex-col gap-1">
+        <div className="flex items-center gap-2 text-xs font-black uppercase text-[#2D3748] tracking-widest border-b-2 border-[#2D3748] pb-1 mb-1">
+          <Cpu size={14} className="text-[#FF6B6B]" />
+          Engine
         </div>
-      )}
+        <div className="font-mono text-sm text-[#4A5568]">{currentModel}</div>
+      </div>
 
-      {latencyMs !== undefined && (
-        <div className="metadata-item">
-          <Clock size={12} />
-          <span>{latencyMs}ms</span>
+      {/* Latency Block */}
+      <div className="bg-white border-2 border-[#2D3748] rounded-md shadow-[4px_4px_0_0_#2D3748] p-3 flex flex-col gap-1">
+        <div className="flex items-center gap-2 text-xs font-black uppercase text-[#2D3748] tracking-widest border-b-2 border-[#2D3748] pb-1 mb-1">
+          <Clock size={14} className="text-[#4ECDC4]" />
+          Latency
         </div>
-      )}
+        <div className="font-mono text-xl font-bold text-[#2D3748]">
+          {latencyMs !== undefined ? `${latencyMs}ms` : '---'}
+        </div>
+      </div>
 
-      {toolsUsed && toolsUsed.length > 0 && (
-        <div className="metadata-item">
-          <Wrench size={12} />
-          <span>{toolsUsed.join(', ')}</span>
+      {/* Tools Block */}
+      <div className="bg-white border-2 border-[#2D3748] rounded-md shadow-[4px_4px_0_0_#2D3748] p-3 flex flex-col gap-1">
+        <div className="flex items-center gap-2 text-xs font-black uppercase text-[#2D3748] tracking-widest border-b-2 border-[#2D3748] pb-1 mb-1">
+          <Wrench size={14} className="text-[#FFE66D]" />
+          Active Tools
         </div>
-      )}
+        <div className="font-mono text-xs text-[#4A5568]">
+          {toolsUsed && toolsUsed.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mt-1">
+              {toolsUsed.map(t => (
+                <span key={t} className="bg-[#FFE66D] px-2 py-1 border border-[#2D3748] rounded font-bold text-[#2D3748]">{t}</span>
+              ))}
+            </div>
+          ) : (
+            'None'
+          )}
+        </div>
+      </div>
 
-      {safety && (
-        <div className={`metadata-item ${safety.passed ? 'safety-passed' : 'safety-failed'}`}>
-          <Shield size={12} />
-          <span>
-            {safety.passed
-              ? `✓ Passed (${safety.layersPassed}/${safety.totalLayers})`
-              : `✗ Failed at ${safety.blockedAt}`}
-          </span>
+      {/* Safety Block */}
+      <div className={`bg-white border-2 border-[#2D3748] rounded-md shadow-[4px_4px_0_0_#2D3748] p-3 flex flex-col gap-1`}>
+        <div className="flex items-center gap-2 text-xs font-black uppercase text-[#2D3748] tracking-widest border-b-2 border-[#2D3748] pb-1 mb-1">
+          <Shield size={14} className={safety?.passed === false ? "text-[#FF6B6B]" : "text-[#38E54D]"} />
+          Safety Check
         </div>
-      )}
+        <div className="font-mono text-sm font-bold mt-1">
+          {safety ? (
+            safety.passed ? (
+              <span className="text-[#38E54D] bg-[#38E54D]/10 px-2 py-1 rounded">✓ PASSED ({safety.layersPassed}/{safety.totalLayers})</span>
+            ) : (
+              <span className="text-[#FF6B6B] bg-[#FF6B6B]/10 px-2 py-1 rounded">✗ BLOCKED ({safety.blockedAt})</span>
+            )
+          ) : (
+            <span className="text-[#A0AEC0]">Pending...</span>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
 }

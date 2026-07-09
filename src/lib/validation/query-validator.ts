@@ -2,7 +2,7 @@
 // Query Validator — Pre-execution validation
 // ============================================================
 
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 import { QueryValidationResult } from '@/types';
 
 const QUERY_VALIDATION_PROMPT = `You are a query validation system. Determine whether the user query is ready for processing.
@@ -28,18 +28,20 @@ export async function validateQuery(
   apiKey: string,
 ): Promise<QueryValidationResult> {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const groq = new Groq({ apiKey });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `${QUERY_VALIDATION_PROMPT}\n\nUser Query: "${input}"`,
-      config: {
-        temperature: 0.1,
-        maxOutputTokens: 200,
-      },
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: QUERY_VALIDATION_PROMPT },
+        { role: 'user', content: `User Query: "${input}"` }
+      ],
+      temperature: 0.1,
+      max_completion_tokens: 200,
+      response_format: { type: 'json_object' }
     });
 
-    const text = response?.text?.trim() || '';
+    const text = response.choices[0]?.message?.content?.trim() || '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
