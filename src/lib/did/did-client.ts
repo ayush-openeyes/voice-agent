@@ -5,7 +5,7 @@
 const DID_API_BASE = 'https://api.d-id.com';
 
 const DEFAULT_AVATAR_IMAGE =
-  'https://raw.githubusercontent.com/ayushrajput8252-dev/voice-agent/main/Pi7_Passport_Photo%20(1).jpeg';
+  'https://create-images-results.d-id.com/DefaultPresenters/Noelle_f/image.jpeg';
 
 // ---- Types ----
 

@@ -17,8 +17,8 @@ interface MessageBubbleProps {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isStreaming = message.isStreaming;
-  const isGenerating = !isUser && (isStreaming || message.avatarStatus === 'generating' || !message.avatarStatus);
-  const showText = isUser || message.avatarStatus === 'ready' || message.avatarStatus === 'error';
+  const isGenerating = !isUser && isStreaming;
+  const showText = isUser || !!message.content;
   const [showVideo, setShowVideo] = useState(false);
 
   return (

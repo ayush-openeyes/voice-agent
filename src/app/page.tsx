@@ -273,9 +273,15 @@ export default function Home() {
                         : m,
                     ),
                   );
-                  // Do NOT speak here. Wait for D-ID video or error.
+                  // Speak immediately so the mascot can talk while we wait for D-ID!
                   if (data.fullResponse) {
-                    pipeline.transitionTo(AppState.AudioGeneration, 'Waiting for Video');
+                    speechSynthesis.speak(data.fullResponse);
+                    // Only transition to AudioGeneration if the backend didn't block it
+                    // Wait, if it was blocked, the pipeline is already in 'Blocked' state.
+                    // But if it's a normal completion, let's just go to AvatarGeneration.
+                    if (pipeline.currentState !== AppState.Blocked) {
+                      pipeline.transitionTo(AppState.AvatarGeneration, 'Generating Avatar...');
+                    }
                   }
                   break;
                 }
