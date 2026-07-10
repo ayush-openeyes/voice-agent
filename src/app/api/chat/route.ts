@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
               totalLayers: 5,
               blockedAt: safetyResult.blockedAt,
               reason: safetyResult.reason,
+              details: safetyResult.layers,
             },
           });
           send('complete', {
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
                 passed: true,
                 layersPassed: safetyResult.layers.length,
                 totalLayers: 5,
+                details: safetyResult.layers,
               },
             },
           });
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
               model: 'llama-3.3-70b-versatile',
               latencyMs: Date.now() - pipelineStartTime,
               toolsUsed: [],
-              safety: { passed: false, layersPassed: 4, totalLayers: 5, reason: queryValidation.reason },
+              safety: { passed: false, layersPassed: 4, totalLayers: 5, reason: queryValidation.reason, details: safetyResult.layers },
             },
           });
           controller.close();
@@ -166,7 +168,7 @@ export async function POST(request: NextRequest) {
               model: aiResult.model,
               latencyMs: Date.now() - pipelineStartTime,
               toolsUsed: aiResult.toolsUsed,
-              safety: { passed: false, layersPassed: 4, totalLayers: 5, reason: 'Response validation failed' },
+              safety: { passed: false, layersPassed: 4, totalLayers: 5, reason: 'Response validation failed', details: [...safetyResult.layers, responseLayerResult] },
             },
             responseValidation,
           });
@@ -192,6 +194,7 @@ export async function POST(request: NextRequest) {
             passed: true,
             layersPassed: allLayers.filter((l) => l.passed).length,
             totalLayers: 5,
+            details: allLayers,
           },
         });
 
@@ -205,6 +208,7 @@ export async function POST(request: NextRequest) {
               passed: true,
               layersPassed: allLayers.filter((l) => l.passed).length,
               totalLayers: 5,
+              details: allLayers,
             },
           },
           responseValidation,

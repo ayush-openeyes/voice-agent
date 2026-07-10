@@ -85,6 +85,8 @@ export function MetadataFooter({ model, latencyMs, toolsUsed, safety }: Metadata
           </div>
           Safety Pipeline
         </div>
+        
+        {/* Overall Status Header */}
         <div className="font-mono text-sm font-bold mt-1 bg-white p-2 rounded border border-gray-200">
           {safety ? (
             safety.passed ? (
@@ -105,6 +107,25 @@ export function MetadataFooter({ model, latencyMs, toolsUsed, safety }: Metadata
             </div>
           )}
         </div>
+
+        {/* Detailed Layers List */}
+        {safety?.details && safety.details.length > 0 && (
+          <div className="mt-2 flex flex-col gap-1.5 border-t-2 border-dashed border-gray-200 pt-2">
+            {safety.details.map((layer, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs font-mono">
+                <span className={`mt-0.5 ${layer.passed ? 'text-[#38E54D]' : 'text-[#FF6B6B]'}`}>
+                  {layer.passed ? '✓' : '✗'}
+                </span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-[#2D3748]">{layer.layer.replace(/_/g, ' ')}</span>
+                  {!layer.passed && layer.reason && (
+                    <span className="text-[10px] text-[#FF6B6B] leading-tight mt-0.5">{layer.reason}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );

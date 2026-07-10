@@ -50,6 +50,7 @@ export interface SafetyInfo {
   totalLayers: number;
   blockedAt?: string;
   reason?: string;
+  details?: SafetyLayerResult[];
 }
 
 export interface MessageMetadata {
